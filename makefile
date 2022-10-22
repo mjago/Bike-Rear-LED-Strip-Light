@@ -14,7 +14,7 @@ ARDUINO_LINT_VERSION := 1.2.0
 ARDUINO_LINT_URL := https://raw.githubusercontent.com/arduino/arduino-lint/main/etc/install.sh
 
 SKETCH := bike-rear-led-strip-light
-BOARD := uno
+BOARD := mini
 PORT := /dev/ttyACM0
 
 CORES := arduino:avr

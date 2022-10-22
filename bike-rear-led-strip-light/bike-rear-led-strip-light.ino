@@ -103,7 +103,7 @@ Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_PIXELS,
 
 void set_colour(colour_state_t * colour_state,
                 unsigned long * colour,
-                uint32_t * colour_offset,
+                int32_t * colour_offset,
                 bool toggle);
 uint32_t v_conversion(uint16_t value);
 void read_voltage(uint32_t * bat_lvl);
@@ -136,9 +136,7 @@ void check_lower_state(bat_state_t * bat_state,
 void check_higher_state(bat_state_t * bat_state,
                         uint32_t bat_lvl,
                         bat_state_t higher);
-void set_bat_state(bat_state_t * bat_state,
-                   uint32_t bat_lvl,
-                   bool initialize = false);
+void set_bat_state(bat_state_t * bat_state, uint32_t bat_lvl);
 
 void setup(void)
 {
@@ -168,13 +166,13 @@ void loop(void)
   bat_state_t bat_state = BAT_STATE_SIZE;
   unsigned long colour;
   bool toggle = true;
-  int32_t colour_offset;
-  uint32_t pixels;
+  int32_t colour_offset = 0;
+  uint32_t pixels = NUM_PIXELS;
   uint32_t bat_lvl;
   uint32_t x;
 
   read_voltage(&bat_lvl);
-  set_bat_state(&bat_state, bat_lvl, true);
+  set_bat_state(&bat_state, bat_lvl);
 
   for(;;)
     {
@@ -230,7 +228,7 @@ void loop(void)
 
 void set_colour(colour_state_t * colour_state,
                 unsigned long * colour,
-                uint32_t * colour_offset,
+                int32_t * colour_offset,
                 bool toggle)
 {
   static bool colour_dir = true;
@@ -273,7 +271,9 @@ void set_colour(colour_state_t * colour_state,
       *colour_offset = *colour_offset > MAX_RED ? MAX_RED : MIN_RED;
       if(colour_dir)
         {
-      *colour_state = *colour_state >= 2 ? 0 : *colour_state + 1;
+          *colour_state = (*colour_state >= 2)
+            ? COLOUR_STATE_0
+            : (colour_state_t)(*colour_state + 1);
         }
     }
 }
@@ -357,8 +357,8 @@ void led_sweep_L(uint16_t cycles,
                  uint32_t color)
 {
   uint32_t previous[NUM_PIXELS];
-  uint32_t count;
-  uint32_t x;
+  int32_t count;
+  int32_t x;
   for (count = 1; count<NUM_PIXELS; count++)
     {
       strip.setPixelColor(count, color);
@@ -371,7 +371,7 @@ void led_sweep_L(uint16_t cycles,
       strip.show();
       delay(speed);
     }
-  for (count = NUM_PIXELS-1; count>=0; count--)
+  for (count = NUM_PIXELS-1; count >= 0; count--)
     {
       strip.setPixelColor(count, color);
       previous[count] = color;
@@ -391,8 +391,8 @@ void led_sweep_R(uint16_t cycles,
                  uint32_t color)
 {
   uint32_t previous[NUM_PIXELS];
-  uint32_t count;
-  uint32_t x;
+  int32_t count;
+  int32_t x;
 
   for (count = NUM_PIXELS-1; count>=0; count--)
     {
@@ -495,9 +495,7 @@ void check_higher_state(bat_state_t * bat_state,
     }
 }
 
-void set_bat_state(bat_state_t * bat_state,
-                   uint32_t bat_lvl,
-                   bool initialize = false)
+void set_bat_state(bat_state_t * bat_state, uint32_t bat_lvl)
 {
   bat_state_t state = BAT_STATE_SIZE;
 
@@ -541,17 +539,10 @@ void set_bat_state(bat_state_t * bat_state,
         default:
           *bat_state = BAT_STATE_3440;
         }
-      if(initialize)
-        {
-          if(state == *bat_state)
-            {
-              break;
-            }
-          state = *bat_state;
-        }
-      else
+      if(state == *bat_state)
         {
           break;
         }
+      state = *bat_state;
     }
 }
